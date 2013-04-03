@@ -26,13 +26,13 @@ Versions
 Creating a Email river
 --------------------
 
-We create first an index to store all the *emails* :
+First create an index to store all the *emails* :
 
 ```sh 
 $ curl -XPUT 'localhost:9200/google/'
 ```
 
-We create the river with the following properties :
+Then create the river with the following properties :
 
 ```sh
 $ curl -XPUT 'localhost:9200/_river/google/_meta' -d '{
@@ -56,7 +56,7 @@ $ curl -XPUT 'localhost:9200/_river/google/_meta' -d '{
 }'
 ```
 
-We can check the indexed result now :
+And we can check the indexed result now :
 
 
 ```sh
