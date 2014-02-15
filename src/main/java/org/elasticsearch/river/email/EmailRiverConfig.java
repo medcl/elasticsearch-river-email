@@ -47,14 +47,14 @@ public class EmailRiverConfig {
     private String attachmentDefaultType="no_suffix";
 
     private String weedFsServer="127.0.0.1";
-    private String weedFsMasterPort="9333";
-    private String weedFsVolumePort="8080";
+    private int weedFsMasterPort=9333;
+    private int weedFsVolumePort=8080;
 
 
     public EmailRiverConfig() {
 	}
 	
-	public EmailRiverConfig(String host, int port,String type,String username,String password, int checkInterval,int skipCount) {
+	public EmailRiverConfig(String host, int port,String type,String username,String password, int checkInterval,int skipCount,String weedfsHost,int weedfsMasterPort,int weedfsVolumePort) {
 		this.setHost(host);
         this.setPort(port);
         this.setType(type);
@@ -62,6 +62,10 @@ public class EmailRiverConfig {
         this.setPassword(password);
         this.setCheckInterval(checkInterval);
         this.setSkipCount(skipCount);
+        this.setWeedFsServer(weedfsHost);
+        this.setWeedFsMasterPort(weedfsMasterPort);
+        this.setWeedFsVolumePort(weedfsVolumePort);
+
 	}
 
     public int getCheckInterval() {
@@ -165,19 +169,19 @@ public class EmailRiverConfig {
         this.weedFsServer = weedFsServer;
     }
 
-    public String getWeedFsMasterPort() {
+    public int getWeedFsMasterPort() {
         return weedFsMasterPort;
     }
 
-    public void setWeedFsMasterPort(String weedFsMasterPort) {
+    public void setWeedFsMasterPort(int weedFsMasterPort) {
         this.weedFsMasterPort = weedFsMasterPort;
     }
 
-    public String getWeedFsVolumePort() {
+    public int getWeedFsVolumePort() {
         return weedFsVolumePort;
     }
 
-    public void setWeedFsVolumePort(String weedFsVolumePort) {
+    public void setWeedFsVolumePort(int weedFsVolumePort) {
         this.weedFsVolumePort = weedFsVolumePort;
     }
 }

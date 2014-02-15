@@ -129,4 +129,8 @@ Tips
 you can access the attachments by visit: http://weedfs_server:port/file_id,for example:
 http://localhost:8080/3,0668b58384f737
 
-
+WeedFs Related Settings
+--------------------
+weedfs_host:"127.0.0.1"
+weedfs_master_port:9333
+weedfs_volume_port:8080

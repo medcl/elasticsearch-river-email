@@ -85,7 +85,11 @@ public class EmailRiver extends AbstractRiverComponent implements River {
 					String password = XContentMapValues.nodeStringValue(config.get("password"), "");
 					int interval  = XContentMapValues.nodeIntegerValue(config.get("check_interval"), 15 * 60 * 1000);
 					int skip_count  = XContentMapValues.nodeIntegerValue(config.get("skip_count"), 1);
-					riverConfigs.add(new EmailRiverConfig(host, port,type, username,password,interval,skip_count));
+					String weedfs_host  = XContentMapValues.nodeStringValue(config.get("weedfs_host"), "127.0.0.1");
+                    int weedfs_master_port = XContentMapValues.nodeIntegerValue(config.get("weedfs_master_port"), 9333);
+                    int weedfs_volume_port = XContentMapValues.nodeIntegerValue(config.get("weedfs_volume_port"), 8080);
+
+                    riverConfigs.add(new EmailRiverConfig(host, port,type, username,password,interval,skip_count,weedfs_host,weedfs_master_port,weedfs_volume_port));
 				}
 
 			} else {
@@ -97,7 +101,10 @@ public class EmailRiver extends AbstractRiverComponent implements River {
                 String password = XContentMapValues.nodeStringValue(emailSettings.get("password"), "");
                 int interval  = XContentMapValues.nodeIntegerValue(emailSettings.get("check_interval"), 15 * 60 * 1000);
                 int skip_count  = XContentMapValues.nodeIntegerValue(emailSettings.get("skip_count"), 1);
-                riverConfigs.add(new EmailRiverConfig(host, port,type, username,password,interval,skip_count));
+                String weedfs_host  = XContentMapValues.nodeStringValue(emailSettings.get("weedfs_host"), "127.0.0.1");
+                int weedfs_master_port = XContentMapValues.nodeIntegerValue(emailSettings.get("weedfs_master_port"), 9333);
+                int weedfs_volume_port = XContentMapValues.nodeIntegerValue(emailSettings.get("weedfs_volume_port"), 8080);
+                riverConfigs.add(new EmailRiverConfig(host, port,type, username,password,interval,skip_count,weedfs_host,weedfs_master_port,weedfs_volume_port));
 			}
 
 		}else {
