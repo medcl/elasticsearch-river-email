@@ -233,7 +233,7 @@ public class EmailRiver extends AbstractRiverComponent implements River {
 
                                     if(config.getIdField().isEmpty()){
 
-                                        bulk.add(indexRequest(indexName).type(typeName).source(EmailToJson.toJson(message[i], riverName.getName())));
+                                        bulk.add(indexRequest(indexName).type(typeName).source(EmailToJson.toJson(message[i], riverName.getName(),config)));
                                     }else{
                                         String[] ids=message[i].getHeader(config.getIdField());
                                         String id="";
@@ -244,7 +244,7 @@ public class EmailRiver extends AbstractRiverComponent implements River {
                                         // Let's look if object already exists
                                         GetResponse oldMessage = client.prepareGet(indexName, typeName, String.valueOf(id)).execute().actionGet();
                                         if (!oldMessage.isExists()) {
-                                            bulk.add(indexRequest(indexName).type(typeName).id(id).source(EmailToJson.toJson(message[i], riverName.getName())));
+                                            bulk.add(indexRequest(indexName).type(typeName).id(id).source(EmailToJson.toJson(message[i], riverName.getName(),config)));
 
                                             if (logger.isDebugEnabled()) logger.debug("Email update detected for Id [{}]",id);
                                             if (logger.isTraceEnabled()) logger.trace("Email is : {}", message[i].getSubject());

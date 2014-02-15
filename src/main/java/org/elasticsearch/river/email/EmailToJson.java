@@ -19,7 +19,19 @@
 
 package org.elasticsearch.river.email;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.multipart.ByteArrayPartSource;
+import org.apache.commons.httpclient.methods.multipart.FilePart;
+import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
+import org.apache.commons.httpclient.params.HttpClientParams;
 import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
@@ -28,13 +40,17 @@ import javax.mail.internet.MimeMultipart;
 import javax.mail.internet.MimeUtility;
 import java.io.*;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 public class EmailToJson {
+
+    private static final Logger logger = LoggerFactory.getLogger(EmailToJson.class);
 
     static String[] convertAddress(Address[] input){
 
@@ -48,15 +64,169 @@ public class EmailToJson {
         }
         return addrs1;
     }
+    private static String stream2String( InputStream is) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int i;
+        while ((i = is.read()) != -1) {
+            baos.write(i);
+        }
+        return baos.toString();
+    }
 
-    public static XContentBuilder toJson(Message message, String riverName) throws IOException {
+    private static boolean upload(String fileID, String publicUrl, byte[] data) {
+        boolean result=false;
+        if (data==null || data.length==0) {
+            logger.error("upload file is null");
+            return false;
+        }
+
+        //请求处理页面 "http://localhost:8080/"
+        String uri = publicUrl+ fileID;
+
+        logger.debug("prepare to upload file to:"+uri);
+
+        HttpClient httpClient = new HttpClient();
+        PostMethod postMethod = new PostMethod(uri);
+
+        ByteArrayPartSource bp = new ByteArrayPartSource(fileID, data);
+
+        FilePart bfp = new FilePart(fileID, bp);
+
+//        bfp.setContentType("text/html");
+//        bfp.setName("prompt:file");
+
+
+        bfp.setTransferEncoding(null);
+        org.apache.commons.httpclient.methods.multipart.Part[] parts = {bfp};
+        postMethod.setRequestEntity(new MultipartRequestEntity(parts, postMethod.getParams()));
+
+        HttpClientParams params = new HttpClientParams();
+        params.setConnectionManagerTimeout(5000L);
+        httpClient.setParams(params);
+        try {
+            httpClient.executeMethod(postMethod);
+            result=true;
+        } catch (Exception e) {
+            logger.error("上传文件失败！", e);
+        } finally {
+            postMethod.releaseConnection();
+        }
+        return result;
+    }
+
+    public static String uploadFileToWeedfs(byte[] data,EmailRiverConfig config) throws IOException {
+        if (data==null||data.length==0) return null;
+
+        String finalResult=null;
+
+        String url="http://"+config.getWeedFsServer()+":"+config.getWeedFsMasterPort()+"/dir/assign?count=1"  ;
+
+        GetMethod req = new GetMethod(url);
+        int response;
+        try {
+            HttpClient httpClient = new HttpClient();
+            response = httpClient.executeMethod(req);
+
+            InputStream respStr;
+            if (response == HttpStatus.SC_OK) {
+                respStr = req.getResponseBodyAsStream();
+                if (respStr != null) {
+                    String resultStr = stream2String(respStr);
+                    JSONObject json = JSON.parseObject(resultStr);
+                    String fileid = json.get("fid").toString();
+
+                    //String publicUrl = json.get("publicUrl").toString();
+                    String publicUrl="http://"+config.getWeedFsServer()+":"+config.getWeedFsVolumePort()+"/";
+                    boolean result=upload(fileid, publicUrl, data);
+                    if(result){
+                        finalResult=  fileid;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            logger.error("上传文件失败！", e);
+        } finally {
+            req.releaseConnection();
+        }
+         return  finalResult;
+    }
+
+    public static List<AttachmentInfo> saveAttachmentToWeedFs(Part message,List<AttachmentInfo> attachments,EmailRiverConfig config) throws UnsupportedEncodingException, MessagingException,
+            FileNotFoundException, IOException{
+        if(attachments==null){
+            attachments=new ArrayList<AttachmentInfo>();
+        }
+        boolean hasAttachment = false;
+        try {
+            hasAttachment = isContainAttachment(message);
+        } catch (MessagingException e) {
+            logger.error("save attachment",e);
+        } catch (IOException e) {
+            logger.error("save attachment", e);
+        }
+        if(hasAttachment){
+
+            if (message.isMimeType("multipart/*")) {
+                Multipart multipart = (Multipart) message.getContent();
+
+                int partCount = multipart.getCount();
+                for (int i = 0; i < partCount; i++) {
+
+                    BodyPart bodyPart = multipart.getBodyPart(i);
+
+                    String disp = bodyPart.getDisposition();
+                    if (disp != null && (disp.equalsIgnoreCase(Part.ATTACHMENT) || disp.equalsIgnoreCase(Part.INLINE))) {
+                        InputStream is = bodyPart.getInputStream();
+
+                        BufferedInputStream bis = new BufferedInputStream(is);
+                        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+                        int len = -1;
+                        while ((len = bis.read()) != -1) {
+                            bos.write(len);
+                        }
+                        bos.close();
+                        bis.close();
+
+                        byte[] data = bos.toByteArray();
+                        String fileId=uploadFileToWeedfs(data,config);
+                        if(fileId!=null){
+                            AttachmentInfo info=new AttachmentInfo();
+                            info.fileId=fileId;
+                            info.fileName =decodeText(bodyPart.getFileName());
+                            info.fileSize= data.length;
+                            attachments.add(info);
+                        }
+
+                    } else if (bodyPart.isMimeType("multipart/*")) {
+
+                      attachments.addAll(saveAttachmentToWeedFs(bodyPart, attachments,config));
+
+                    } else {
+                        String contentType = bodyPart.getContentType();
+                        if (contentType.indexOf("name") != -1 || contentType.indexOf("application") != -1) {
+                            attachments.addAll(saveAttachmentToWeedFs(bodyPart, attachments,config));
+                        }
+                    }
+                }
+            } else if (message.isMimeType("message/rfc822")) {
+
+                attachments.addAll(saveAttachmentToWeedFs(message, attachments,config));
+
+            }
+
+        }
+        return attachments;
+    }
+
+    public static XContentBuilder toJson(Message message, String riverName,EmailRiverConfig config) throws IOException {
         XContentBuilder out = null;
         MimeMessage msg=(MimeMessage)message;
         try {
-
+            List<AttachmentInfo> attachments=null;
             boolean hasAttachment = isContainAttachment(message);
             if(hasAttachment){
-            //TODO save attachments
+               attachments=saveAttachmentToWeedFs(msg,attachments,config);
             }
 
             StringBuffer content = new StringBuffer(30);
@@ -64,7 +234,7 @@ public class EmailToJson {
 
             int length = 200;
             String summary=delHTMLTag(content.toString());
-            summary=(summary.length() > length ? summary.substring(0, length) + "..." : summary.toString());
+            summary=(summary.length() > length ? summary.substring(0, length) + "..." : summary);
 
             out = jsonBuilder()
                 .startObject()
@@ -76,16 +246,31 @@ public class EmailToJson {
                     .field("from", getFrom(msg))
                     .field("to", getReceiveAddress(msg, null))
                     .field("content_type", getContentType(msg))
-                    .field("summary", summary.toString())
+                    .field("summary", summary)
                     .field("content", content.toString())
                     .field("priority", getPriority(msg))
                     .field("need_receipt", isReplySign(msg))
                     .field("size", (msg.getSize() /1024) + "kb")
                     .field("contain_attachment", hasAttachment)
+                    .field("timestamp", new Date().getTime())
                     .field("via_river", riverName);
+            if(attachments!=null&&attachments.size()>0){
+                XContentBuilder array = out.field("attachments").startArray();
+                for (int i = 0; i < attachments.size(); i++) {
+                    AttachmentInfo info=attachments.get(i);
+                    array.startObject()
+                            .field("file_name",info.fileName)
+                            .field("file_size",info.fileSize)
+                            .field("file_id",info.fileId)
+                            .field("summary",info.summary)
+                            .endObject();
+                }
+                array.endArray();
+            }
         } catch (MessagingException e) {
-            e.printStackTrace();
+            logger.error("convert mail to json",e);
         }
+        assert out != null;
         return out.endObject();
 	}
 
@@ -97,7 +282,7 @@ public class EmailToJson {
                 return array[0];
             }
         } catch (MessagingException e) {
-            e.printStackTrace();
+            logger.error("get content type",e);
         }
          return "";
     }
@@ -154,7 +339,7 @@ public class EmailToJson {
 
 
     public static String getReceiveAddress(MimeMessage msg, Message.RecipientType type) throws MessagingException {
-        StringBuffer receiveAddress = new StringBuffer();
+        StringBuilder receiveAddress = new StringBuilder();
         Address[] addresss = null;
         if (type == null) {
             addresss = msg.getAllRecipients();

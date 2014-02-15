@@ -41,6 +41,16 @@ public class EmailRiverConfig {
 	private int skipCount=0;
     private String idField="";
 
+    private String attachmentIndex="mail_attachments";
+
+    //use file's suffix as type
+    private String attachmentDefaultType="no_suffix";
+
+    private String weedFsServer="127.0.0.1";
+    private String weedFsMasterPort="9333";
+    private String weedFsVolumePort="8080";
+
+
     public EmailRiverConfig() {
 	}
 	
@@ -51,6 +61,7 @@ public class EmailRiverConfig {
         this.setUsername(username);
         this.setPassword(password);
         this.setCheckInterval(checkInterval);
+        this.setSkipCount(skipCount);
 	}
 
     public int getCheckInterval() {
@@ -128,5 +139,45 @@ public class EmailRiverConfig {
 
     public void setIdField(String idField) {
         this.idField = idField;
+    }
+
+    public String getAttachmentIndex() {
+        return attachmentIndex;
+    }
+
+    public void setAttachmentIndex(String attachmentIndex) {
+        this.attachmentIndex = attachmentIndex;
+    }
+
+    public String getAttachmentDefaultType() {
+        return attachmentDefaultType;
+    }
+
+    public void setAttachmentDefaultType(String attachmentDefaultType) {
+        this.attachmentDefaultType = attachmentDefaultType;
+    }
+
+    public String getWeedFsServer() {
+        return weedFsServer;
+    }
+
+    public void setWeedFsServer(String weedFsServer) {
+        this.weedFsServer = weedFsServer;
+    }
+
+    public String getWeedFsMasterPort() {
+        return weedFsMasterPort;
+    }
+
+    public void setWeedFsMasterPort(String weedFsMasterPort) {
+        this.weedFsMasterPort = weedFsMasterPort;
+    }
+
+    public String getWeedFsVolumePort() {
+        return weedFsVolumePort;
+    }
+
+    public void setWeedFsVolumePort(String weedFsVolumePort) {
+        this.weedFsVolumePort = weedFsVolumePort;
     }
 }
