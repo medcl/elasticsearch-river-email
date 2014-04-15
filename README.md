@@ -20,9 +20,13 @@ Versions
 			<td>0.20.2</td>
 		</tr>
 		<tr>
-			<td>master (0.2.0)</td>
+			<td>0.2.0</td>
 			<td>0.90.2</td>
 		</tr>
+		<tr>
+            <td>master (0.3.0)</td>
+            <td>1.0.0</td>
+        </tr>
 	</tbody>
 </table>
 

@@ -4,7 +4,7 @@
     <groupId>com.infinitbyte</groupId>
 	<artifactId>elasticsearch-river-email</artifactId>
 	<packaging>jar</packaging>
-	<version>0.2.0</version>
+	<version>0.3.0</version>
 	<name>Email River Plugin for ElasticSearch</name>
 	<url>http://log.medcl.net</url>
     <description>
@@ -26,7 +26,7 @@
     </licenses>
 
     <properties>
-		<elasticsearch.version>0.20.2</elasticsearch.version>
+		<elasticsearch.version>1.0.0</elasticsearch.version>
 	</properties>
 
 	<developers>
@@ -66,7 +66,14 @@
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
             <version>1.1.14</version>
+            <systemPath>${basedir}/lib/fastjson-1.1.14.jar</systemPath>
+            <scope>system</scope>
         </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.alibaba</groupId>-->
+            <!--<artifactId>fastjson</artifactId>-->
+            <!--<version>1.1.14</version>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
@@ -91,6 +98,19 @@
 
     <build>
 		<plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>

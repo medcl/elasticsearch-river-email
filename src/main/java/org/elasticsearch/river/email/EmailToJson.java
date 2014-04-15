@@ -348,7 +348,8 @@ public class EmailToJson {
         }
 
         if (addresss == null || addresss.length < 1)
-            throw new MessagingException("没有收件人!");
+           return  "";
+           // throw new MessagingException("没有收件人!");
         for (Address address : addresss) {
             InternetAddress internetAddress = (InternetAddress)address;
             receiveAddress.append(internetAddress.toUnicodeString()).append(",");
